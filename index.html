@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>えとことば マッチング</title>
+<style>
+  body { text-align: center; font-family: sans-serif; background-color: #f0f8ff; padding-top: 50px; }
+  #picture { font-size: 120px; margin: 20px; }
+  .choice { font-size: 40px; margin: 15px; padding: 20px 40px; border-radius: 15px; background-color: #fffacd; border: 4px solid #ffd700; cursor: pointer; touch-action: manipulation; }
+  #message { font-size: 50px; color: #ff4500; font-weight: bold; margin-top: 30px; height: 60px; }
+</style>
+</head>
+<body>
+<h1>どっちかな？</h1>
+<div id="picture">🍎</div>
+<div id="choices"></div>
+<div id="message"></div>
+
+<script>
+  // ここを書き換えることで問題を自由に変更できます
+  const data = [
+    { pic: "🍎", word: "りんご", dummy: "ばなな" },
+    { pic: "🐶", word: "いぬ", dummy: "ねこ" },
+    { pic: "🚗", word: "くるま", dummy: "でんしゃ" }
+  ];
+  let current = 0;
+
+  function load() {
+    document.getElementById("message").innerText = "";
+    document.getElementById("picture").innerText = data[current].pic;
+    const choices = document.getElementById("choices");
+    choices.innerHTML = "";
+    // 正解と不正解をランダムに並べ替え
+    let options = [data[current].word, data[current].dummy].sort(() => Math.random() - 0.5);
+    options.forEach(opt => {
+      choices.innerHTML += `<button class="choice" onclick="check('${opt}')">${opt}</button>`;
+    });
+  }
+
+  function check(ans) {
+    if (ans === data[current].word) {
+      document.getElementById("message").innerText = "だいせいかい！🎉";
+      setTimeout(() => {
+        current = (current + 1) % data.length;
+        load();
+      }, 2000);
+    } else {
+      document.getElementById("message").innerText = "もういっかい！";
+    }
+  }
+  load();
+</script>
+</body>
+</html>
