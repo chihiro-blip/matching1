@@ -1,55 +1,314 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>えとことば マッチング</title>
-<style>
-  body { text-align: center; font-family: sans-serif; background-color: #f0f8ff; padding-top: 50px; }
-  #picture { font-size: 120px; margin: 20px; }
-  .choice { font-size: 40px; margin: 15px; padding: 20px 40px; border-radius: 15px; background-color: #fffacd; border: 4px solid #ffd700; cursor: pointer; touch-action: manipulation; }
-  #message { font-size: 50px; color: #ff4500; font-weight: bold; margin-top: 30px; height: 60px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イラストとひらがなのマッチング</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+    }
+    body {
+      background-color: #f0f8ff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    /* 設定エリア */
+    .admin-panel {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 600px;
+      border: 2px solid #5c93ed;
+    }
+    .admin-panel h2 {
+      font-size: 18px;
+      margin-top: 0;
+      color: #5c93ed;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .input-group input[type="text"] {
+      font-size: 18px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 150px;
+    }
+    .item-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .item-tag {
+      background: #e1effe;
+      padding: 5px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+    }
+    .item-tag button {
+      background: #ff5c5c;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+    }
+    /* ゲームメインエリア */
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    /* 画像表示部分 */
+    .image-card {
+      width: 250px;
+      height: 250px;
+      border: 4px solid #ffd700;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background-color: #fafafa;
+    }
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    /* ひらがな選択肢 */
+    .options-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .option-btn {
+      background-color: #ff9a9e;
+      color: white;
+      border: none;
+      border-radius: 16px;
+      padding: 15px 30px;
+      font-size: 36px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #d86a6f;
+      transition: all 0.1s;
+      min-width: 140px;
+      text-align: center;
+    }
+    .option-btn:active {
+      transform: translateY(6px);
+      box-shadow: none;
+    }
+    /* 正解・不正解の演出 */
+    .feedback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 120px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .feedback.show {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
-<h1>どっちかな？</h1>
-<div id="picture">🍎</div>
-<div id="choices"></div>
-<div id="message"></div>
 
-<script>
-  // ここを書き換えることで問題を自由に変更できます
-  const data = [
-    { pic: "🍎", word: "りんご", dummy: "ばなな" },
-    { pic: "🐶", word: "いぬ", dummy: "ねこ" },
-    { pic: "🚗", word: "くるま", dummy: "でんしゃ" }
-  ];
-  let current = 0;
+  <h1>これ なあに？</h1>
 
-  function load() {
-    document.getElementById("message").innerText = "";
-    document.getElementById("picture").innerText = data[current].pic;
-    const choices = document.getElementById("choices");
-    choices.innerHTML = "";
-    // 正解と不正解をランダムに並べ替え
-    let options = [data[current].word, data[current].dummy].sort(() => Math.random() - 0.5);
-    options.forEach(opt => {
-      choices.innerHTML += `<button class="choice" onclick="check('${opt}')">${opt}</button>`;
-    });
-  }
+  <!-- 教員向け：画像・文字追加パネル -->
+  <div class="admin-panel">
+    <h2>【先生へ】教材の追加・管理</h2>
+    <div class="input-group">
+      <input type="file" id="imageInput" accept="image/*">
+      <input type="text" id="labelInput" placeholder="ひらがな (例: いぬ)">
+      <button onclick="addItem()" style="padding: 8px 16px; font-size: 16px; cursor: pointer;">追加</button>
+    </div>
+    <div class="item-list" id="itemList"></div>
+  </div>
 
-  function check(ans) {
-    if (ans === data[current].word) {
-      document.getElementById("message").innerText = "だいせいかい！🎉";
-      setTimeout(() => {
-        current = (current + 1) % data.length;
-        load();
-      }, 2000);
-    } else {
-      document.getElementById("message").innerText = "もういっかい！";
+  <!-- 児童向け：ゲームエリア -->
+  <div class="game-container">
+    <div class="image-card">
+      <img id="currentImage" src="" alt="もんだい画像" style="display:none;">
+      <span id="noImageText" style="color: #999; font-size: 18px;">画像を登録してください</span>
+    </div>
+
+    <div class="options-container" id="optionsContainer"></div>
+  </div>
+
+  <!-- 正誤フィードバック表示 -->
+  <div id="feedback" class="feedback">⭕️</div>
+
+  <script>
+    // 問題データのリスト
+    let items = [];
+    let currentItem = null;
+
+    // 画像とラベルを追加する関数
+    function addItem() {
+      const imageInput = document.getElementById('imageInput');
+      const labelInput = document.getElementById('labelInput');
+
+      if (imageInput.files.length === 0 || !labelInput.value.trim()) {
+        alert('画像とひらがな（名前）の両方を入力してください。');
+        return;
+      }
+
+      const file = imageInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const newItem = {
+          id: Date.now(),
+          imageSrc: e.target.result,
+          label: labelInput.value.trim()
+        };
+        items.push(newItem);
+        
+        // フォームリセット
+        imageInput.value = '';
+        labelInput.value = '';
+
+        updateAdminList();
+        if (items.length === 1 || !currentItem) {
+          nextQuestion();
+        }
+      };
+
+      reader.readAsDataURL(file);
     }
-  }
-  load();
-</script>
+
+    // 教材一覧の更新
+    function updateAdminList() {
+      const listEl = document.getElementById('itemList');
+      listEl.innerHTML = '';
+      items.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'item-tag';
+        tag.innerHTML = `
+          <span>${item.label}</span>
+          <button onclick="removeItem(${item.id})">×</button>
+        `;
+        listEl.appendChild(tag);
+      });
+    }
+
+    // 教材の削除
+    function removeItem(id) {
+      items = items.filter(item => item.id !== id);
+      updateAdminList();
+      if (items.length === 0) {
+        resetGame();
+      } else {
+        nextQuestion();
+      }
+    }
+
+    // リセット
+    function resetGame() {
+      currentItem = null;
+      document.getElementById('currentImage').style.display = 'none';
+      document.getElementById('noImageText').style.display = 'inline';
+      document.getElementById('optionsContainer').innerHTML = '';
+    }
+
+    // 次の問題を表示
+    function nextQuestion() {
+      if (items.length === 0) return;
+
+      // ランダムに1つ選択
+      const randomIndex = Math.floor(Math.random() * items.length);
+      currentItem = items[randomIndex];
+
+      // 画像を表示
+      const imgEl = document.getElementById('currentImage');
+      imgEl.src = currentItem.imageSrc;
+      imgEl.style.display = 'block';
+      document.getElementById('noImageText').style.display = 'none';
+
+      // 選択肢の準備（正解 ＋ ランダムなダミー選択肢）
+      let options = [currentItem.label];
+      
+      // ダミー作成（他のアイテムから抽出、無ければ適当な文字）
+      let dummyPool = items.filter(i => i.label !== currentItem.label).map(i => i.label);
+      while (options.length < Math.min(3, items.length)) {
+        let dummy = dummyPool.splice(Math.floor(Math.random() * dummyPool.length), 1)[0];
+        if (dummy && !options.includes(dummy)) {
+          options.push(dummy);
+        }
+      }
+
+      // 選択肢をシャッフル
+      options.sort(() => Math.random() - 0.5);
+
+      // ボタン生成
+      const optionsContainer = document.getElementById('optionsContainer');
+      optionsContainer.innerHTML = '';
+      options.forEach(text => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = text;
+        btn.onclick = () => checkAnswer(text);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    // 正誤判定
+    function checkAnswer(selectedText) {
+      const feedbackEl = document.getElementById('feedback');
+      
+      if (selectedText === currentItem.label) {
+        feedbackEl.textContent = '⭕️';
+        feedbackEl.classList.add('show');
+        setTimeout(() => {
+          feedbackEl.classList.remove('show');
+          nextQuestion();
+        }, 1000);
+      } else {
+        feedbackEl.textContent = '❌';
+        feedbackEl.classList.add('show');
+        setTimeout(() => {
+          feedbackEl.classList.remove('show');
+        }, 800);
+      }
+    }
+  </script>
 </body>
 </html>
